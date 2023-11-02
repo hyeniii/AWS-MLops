@@ -1,38 +1,80 @@
-from pathlib import Path
-import src.acquire_data.download_unzip as du
-from urllib.error import *
+import io
+import os
+import zipfile
+from configparser import ConfigParser
 import py7zr
+import requests
+import boto3
 
-def download_data(url: str, output_path: Path) -> None:
-    """
-    Downloads the file at the url to the directory 'output_path'.
-    -------------------------------------------------------------
-    Arguments:
-    1. url: The URL link from which data is to be acquired
-    2. output_path: The directory to which data is stored
-    """
-    try:
-        du.download_unzip(url, output_path)
-        print("Downloaded successfully.")
-    except URLError as e:
-        print(f"URL Error in get_data.download_data: {e}.")
-    except Exception as e:
-        print(f"An unexpected error occurred in get_data.download_data: {e}.")
+#def lambda_handler(event, context):
+def lambda_handler():
+    source_url = "https://archive.ics.uci.edu/static/public/555/apartment+for+rent+classified.zip"
+    # source_url = event["source_url"]
 
-def unzip_file(zipfile_path: Path, dataset_path: Path) -> None:
-    """
-    Unzips the file previously extracted.
-    -------------------------------------------------------------
-    Arguments:
-    1. zipfile_path: The file path to compressed file which is to be extracted
-    2. dataset_path: The directory to which extracted data is stored
-    """
     try:
-        with py7zr.SevenZipFile(zipfile_path, mode='r') as archive:
-            # Extract all the contents to the specified directory
-            archive.extractall(dataset_path)
-            print("The file extraction was successful.")
-    except py7zr.Bad7zFile as e:
-        print(f"Bad 7z File in get_data.unzip_file: {e}")
+        print("Begin downloading the files...")
+        # Download the file from the internet
+        r = requests.get(source_url)
+        z = zipfile.ZipFile(io.BytesIO(r.content))
+        zipfile_path = "data/"
+        z.extractall(zipfile_path)
+
+        zip_files = os.listdir(zipfile_path)
+        print(zip_files)
+        print("Downloaded files successfully.")
+
+        # Unzip the file
+        for zip_file in zip_files:
+            print(f"Unzipping file {zip_file}.\n")
+            try:
+                with py7zr.SevenZipFile(zipfile_path + zip_file, mode='r') as archive:
+                    # Extract all the contents to the specified directory
+                    archive.extract(zipfile_path)
+            except Exception as err:
+                print(f"An error has occured during unzipping the file: {err}.")
+
+        data_files = [file for file in os.listdir(zipfile_path) if file.endswith(".csv")]
+        print(data_files)
+        for file in data_files:
+            if file.endswith("100K.csv"):
+                os.rename(zipfile_path + file, zipfile_path + "train.csv")
+            if file.endswith("10K.csv"):
+                os.rename(zipfile_path + file, zipfile_path + "test.csv")
+        data_files = [file for file in os.listdir(zipfile_path) if file.endswith(".csv")]
+        print(data_files)
+
+        #
+        # setup AWS S3 access based on config file:
+        #
+        config_file = 'config/config.ini'
+        s3_profile = 'aws-mlops-s3readwrite'
+
+        os.environ['AWS_SHARED_CREDENTIALS_FILE'] = config_file
+        boto3.setup_default_session(profile_name=s3_profile)
+        
+        configur = ConfigParser()
+        configur.read(config_file)
+        bucketname = configur.get('s3', 'bucket_name')
+        print(f"The bucketname is {bucketname}.")
+        
+        s3 = boto3.resource('s3')
+        bucket = s3.Bucket(bucketname)
+
+        # Uploading the zipfiles to s3
+        for file in data_files:
+            bucket.upload_file(zipfile_path +  file, file)
+        print(f"Uploaded files to s3 bucket {bucketname} successfully.")
+
+        return {
+            'statusCode': 200,
+            'body': 'Files downloaded and uploaded to S3 successfully.'
+        }
+
     except Exception as e:
-        print(f"An unexpected error occurred in get_data.unzip_file: {e}")
+        print(f"Execution failed with error: {e}")
+        return {
+            'statusCode': 500,
+            'body': str(e)
+        }
+
+lambda_handler()
