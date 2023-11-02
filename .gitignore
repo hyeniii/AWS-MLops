@@ -127,6 +127,7 @@ celerybeat.pid
 
 # Environments
 aws-mlops/*
+lambda_data_ingestion/*
 .env
 .venv
 env/
