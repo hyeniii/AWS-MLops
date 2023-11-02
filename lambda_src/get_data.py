@@ -32,7 +32,7 @@ def lambda_handler(event, context):
         #         print(f"An error has occured during unzipping the file: {err}.")
 
         # data_files = [file for file in os.listdir(zipfile_path) if file.endswith(".csv")]
-        # print(data_files)
+        
         for file in zip_files:
             if file.endswith("100K.7z"):
                 os.rename(zipfile_path + file, zipfile_path + "train.7z")
@@ -60,6 +60,7 @@ def lambda_handler(event, context):
 
         # Uploading the zipfiles to s3
         for file in zip_files:
+            print(f"Uploading {file} to s3 bucket {bucketname}.")
             bucket.upload_file(zipfile_path +  file, file)
         print(f"Uploaded files to s3 bucket {bucketname} successfully.")
 
