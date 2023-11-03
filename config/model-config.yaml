@@ -5,30 +5,34 @@ run_config:
   description: Predict apartment rental prices.
   dependencies: requirements.txt
   data_source: https://archive.ics.uci.edu/static/public/555/apartment+for+rent+classified.zip
+  clean_data_key: clean_data.csv
   output: runs
+  
 get_data: 
   output_path: data
+  
 # generate_features:
-# train_model:
-#   split_data:
-#     test_size: 
-#     random_state:
-#   choose_features:
-#     features_to_use: 
-#   get_target:
-#     target_feature: 
-#   model_training:
-#     n_estimators: 
-#     max_depth: 
-# score_model:
-#   choose_features:
-#     features_to_use: 
-#   get_target:
-#     target_feature: 
-#   score_type: 
-#     probability: 
-#     label: 
-#     truth: 
+
+train_model:
+  test_size: 0.2
+  seed: 11318
+  k_cv: 5
+  target_var: price
+  initial_features:
+    - bedrooms
+    - bathrooms
+    - square_feet
+  rf_params:
+    n_estim: [10, 50, 100, 200]
+    depth: [5, 10, 15]
+
+score_model: 
+  target_var: price
+  initial_features:
+    - bedrooms
+    - bathrooms
+    - square_feet
+
 # evaluate_performance:
 #   score_type: 
 #     probability: 
