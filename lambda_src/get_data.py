@@ -57,6 +57,7 @@ def lambda_handler(event, context):
         
         s3 = boto3.resource('s3')
         bucket = s3.Bucket(bucketname)
+        print(s3)
 
         # Uploading the zipfiles to s3
         for file in zip_files:
