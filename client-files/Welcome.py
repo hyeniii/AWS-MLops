@@ -60,7 +60,7 @@ sys.tracebacklimit = 0
 # #
 # # what config file should we use for this session?
 #
-config_file = 'rental-wizard-client-config.ini'
+config_file = 'client-files/rental-wizard-client-config.ini'
 
 # print("What config file to use for this session?")
 # print("Press ENTER to use default (photoapp-client-config.ini),")
@@ -79,14 +79,14 @@ config_file = 'rental-wizard-client-config.ini'
 #   print("**ERROR: config file '", config_file, "' does not exist, exiting")
 #   sys.exit(0)
 
-# #
-# # setup base URL to web service:
-# #
-# configur = ConfigParser()
-# configur.read(config_file)
-# baseurl = configur.get('client', 'webservice')
+#
+# setup base URL to web service:
+#
+configur = ConfigParser()
+configur.read(config_file)
+baseurl = configur.get('client', 'webservice')
 
-# # print(baseurl)
+print(baseurl)
 
 # #
 # # main processing loop:
