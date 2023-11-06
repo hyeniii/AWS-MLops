@@ -1,0 +1,17 @@
+s3:
+  raw_data: data/raw/raw_1.csv
+  raw_download_name: raw_1.csv
+  raw_data2: data/raw/raw_2.csv
+  raw2_download_name: raw_2.csv
+  clean_data: data/clean/data_cleaned.csv
+
+dc:
+  drop_columns:
+    - id
+    - title
+    - body
+    - address
+    - currency
+    - source
+    - time
+    - price_display
