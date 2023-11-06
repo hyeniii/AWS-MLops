@@ -7,6 +7,18 @@
 ## Data Source:
 https://archive.ics.uci.edu/dataset/555/apartment+for+rent+classified
 
+## Lambda:
+
+1. create deployment package with dependencies
+```bash
+cd .venv/lib/python{version}/site-packages
+zip -r9 ${OLDPWD}/my-deployment-package.zip .
+```
+2. add lambda handler and other files to zip
+```
+zip -g my-deployment-package.zip my_lambda_function.py
+```
+
 ## Contributors:
 Hye Won Hwang (hyeniii)
 Sharika Mahadevan (sharika95m)
