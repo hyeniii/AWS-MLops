@@ -8,6 +8,7 @@ __pycache__/
 
 # C extensions
 *.so
+.DS_Store
 
 
 # Distribution / packaging
@@ -32,6 +33,9 @@ MANIFEST
 
 #Data
 data/*
+
+#Config files
+config/*.ini
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -128,6 +132,8 @@ celerybeat.pid
 
 # Environments
 aws-mlops/*
+lambda_data_ingestion/*
+streamlit_app/*
 .env
 .venv
 env/
