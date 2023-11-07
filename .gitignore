@@ -37,7 +37,7 @@ data/*
 
 #Config files
 config/*.ini
-lambda_src/data_clean/config.ini
+*/config.ini
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
