@@ -36,12 +36,14 @@ def lambda_handler(event, context):
         s3 = au.s3_client(config)
         logger.info("Connected to s3...")
         ### LOAD DATA ###
-        fn1 = au.s3_get_obj(s3, config, dc_config['s3']['raw_data'])
-        fn2 = au.s3_get_obj(s3, config, dc_config['s3']['raw_data2'])
+        fn1 = au.s3_get_obj(s3, config, dc_config['s3']['raw_data'], dc_config['s3']['raw_download_name'])
+        fn2 = au.s3_get_obj(s3, config, dc_config['s3']['raw_data2'], dc_config['s3']['raw2_download_name'])
         logger.info("Retrieved raw data...")
 
-        df = pd.read_csv(StringIO(fn1['Body'].read().decode('ISO-8859-1')), sep=';', dtype={'address': str})
-        df2 = pd.read_csv(StringIO(fn2['Body'].read().decode('ISO-8859-1')), sep=';',dtype={'address': str})
+        df = pd.read_csv(fn1, encoding='ISO-8859-1', sep=';', dtype={'address': str})
+        df2 = pd.read_csv(fn2, encoding='ISO-8859-1', sep=';', dtype={'address': str})
+        # df = pd.read_csv(StringIO(fn1['Body'].read().decode('ISO-8859-1')), sep=';', dtype={'address': str})
+        # df2 = pd.read_csv(StringIO(fn2['Body'].read().decode('ISO-8859-1')), sep=';',dtype={'address': str})
         # merge 2 datasets
         df = pd.concat([df, df2], ignore_index=True, axis=0)
         logger.info("Columns in the dataframe: %s", df.columns.tolist())

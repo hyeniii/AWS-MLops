@@ -18,23 +18,25 @@ def s3_client(config):
         print(e)
     return s3
 
-def s3_get_obj(s3_client, config, key):
+def s3_get_obj(s3_client, config, key, local_fn):
     try:
         # The bucket name and object (file) key
         bucket_name = config.get('s3', 'bucket_name')
         # store in /tmp so it is writable
-        # local_file_path = os.path.join('/tmp', local_fn)
+        local_file_path = os.path.join('/tmp', local_fn)
 
         # Get the object from S3
-        res = s3_client.get_object(Bucket=bucket_name,Key=key)
-        logger.info(f"File {key} retrieved.")
+        s3_client.download_file(Bucket=bucket_name, Key=key, Filename=local_file_path)
+        logger.info(f"File {key} downloaded to {local_file_path}.")
+        # res = s3_client.get_object(Bucket=bucket_name,Key=key)
+        # logger.info(f"File {key} retrieved.")
         # Read the object's content into a DataFrame
 
     except Exception as e:
             # Handle other possible exceptions
-        logger.error(f"Error retrieving {key}: {e}", exc_info=True)
+        logger.error(f"Error downloading {key}: {e}", exc_info=True)
         return None
-    return res
+    return local_file_path
 
 def s3_upload(s3_client, config, key, content):
     try:
