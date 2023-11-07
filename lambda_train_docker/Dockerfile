@@ -1,14 +1,11 @@
 # Base image
-FROM public.ecr.aws/lambda/python:3.11
-
-# Create working directory in container
-#WORKDIR /app
+#FROM public.ecr.aws/lambda/python:3.11
+FROM --platform=linux/x86_64 amazon/aws-lambda-python:3.9
 
 # Copy requirements file to wd
 COPY requirements_train.txt ${LAMBDA_TASK_ROOT}
 
 # Install libraries
-#RUN pip install --upgrade pip
 RUN pip install -r requirements_train.txt
 
 # Copy folders & files to run pipeline: config, src, pipeline.py

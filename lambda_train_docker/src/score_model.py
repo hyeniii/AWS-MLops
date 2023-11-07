@@ -32,29 +32,30 @@ def score_model(test_df: pd.DataFrame, tmo: RandomForestRegressor, target_var: s
     # Get test features
     x_test  = test_df.drop(target_var, axis = 1)
     y_test = test_df[target_var]
-    print("Test set shape: %s", x_test.shape)
+    logger.info("Test features and target extracted.")
+    logger.debug("Test set shape: %s", x_test.shape)
 
     # --- Predictions ---
+    logger.info("Predicting values for test set")
     try:
         # Predict target for test set
-        print("Predicting values for test set")
         y_pred = tmo.predict(x_test[initial_features])
     except (KeyError, TypeError) as err:
-        print("An error occurred when predicting values for the test set. " +
+        logger.error("An error occurred when predicting values for the test set. " +
                     "The process can't continue. Error: %s", err)
         sys.exit(1)
     except Exception as err:
-        print("An unexpected error occurred when predicting values for the test " +
+        logger.error("An unexpected error occurred when predicting values for the test " +
                     "set. The process can't continue. Error: %s", err)
         sys.exit(1)
     else:
-        print("Predicted values for test set completed.")
+        logger.info("Predicted values for test set completed.")
 
     # Define scores as pandas dataframe
     scores = pd.DataFrame({"y_test":y_test,
                            "y_pred":y_pred})
-    print("Scores dataframe succesfully created.")
-    print("Socres dataframe shape: %s", scores.shape)
+    logger.info("Scores dataframe succesfully created.")
+    logger.debug("Socres dataframe shape: %s", scores.shape)
 
     # Function output
     return scores
@@ -69,17 +70,17 @@ def save_scores(scores: pd.DataFrame, save_path: Path) -> None:
         save_path (Path): Path to file where scores will be saved.
     """
     try:
-        print("Saving scores to file %s", save_path)
+        logger.info("Saving scores to file %s", save_path)
         scores.to_csv(save_path, index = False)
     except FileNotFoundError:
-        print("File %s not found. The process will continue without saving the scores " +
+        logger.warning("File %s not found. The process will continue without saving the scores " +
                        "to csv. Please provide a valid directory to save scores to.", save_path)
     except PermissionError:
-        print("The process does not have the necessary permissions to create or write " +
+        logger.warning("The process does not have the necessary permissions to create or write " +
                        "to the file %s. The process will continue without saving the scores.",
                         save_path)
     except Exception as err:
-        print("An unexpected error occurred when saving scores to file %s. The process " +
+        logger.warning("An unexpected error occurred when saving scores to file %s. The process " +
                        "will continue without saving the scores. Error: %s", save_path, err)
     else:
-        print("Scores dataframed saved to file %s", save_path)
+        logger.info("Scores dataframed saved to file %s", save_path)
