@@ -5,43 +5,29 @@ run_config:
   description: Predict apartment rental prices.
   dependencies: requirements.txt
   data_source: https://archive.ics.uci.edu/static/public/555/apartment+for+rent+classified.zip
-  clean_data_key: clean_data.csv
-  output: runs
-  
-get_data: 
-  output_path: data
-  
-# generate_features:
+  clean_data_key: data/clean/toy_data.csv
+  output: results
 
 train_model:
+  target_var: price_display
   test_size: 0.2
   seed: 11318
   k_cv: 5
-  target_var: price
   initial_features:
     - bedrooms
     - bathrooms
     - square_feet
   rf_params:
-    n_estim: [10, 50, 100, 200]
-    depth: [5, 10, 15]
+    n_estimators: [10, 50, 100]
+    max_depth: [5, 10]
 
 score_model: 
-  target_var: price
+  target_var: price_display
   initial_features:
     - bedrooms
     - bathrooms
     - square_feet
 
-# evaluate_performance:
-#   score_type: 
-#     probability: 
-#     label: 
-#     truth: 
-#   metric_type:
-#     r2_score: 
-#     mse: 
-# aws:
-#   upload: True
-#   bucket_name: smv7369-clouds-hw2
-#   region_name: us-east-2
+aws:
+   bucket_name: aws-mlops-project
+   prefix: modeling_artifacts
