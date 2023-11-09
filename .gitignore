@@ -42,6 +42,9 @@ MANIFEST
 #Data
 data/*
 
+#Runs
+runs/*
+
 #Config files
 config/*.ini
 */config.ini
@@ -143,6 +146,7 @@ celerybeat.pid
 aws-mlops/*
 lambda_data_ingestion/*
 streamlit_app/*
+client_app/*
 .env
 .venv
 env/

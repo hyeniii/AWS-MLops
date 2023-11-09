@@ -1,9 +1,14 @@
 # Importing packages
 from flask import Flask, request, jsonify, Response
 from langchain.llms import OpenAI
+from configparser import ConfigParser
 import os
 
-os.environ["OPENAI_API_KEY"] = "#Enter OpenAI API Key"
+#Accessing the API Key
+config_file = "config/config.ini"
+configur = ConfigParser()
+configur.read(config_file)
+os.environ["OPENAI_API_KEY"] = configur.get('openai-api', 'api_key')
 
 # Create Flask Instance
 app = Flask(__name__)
