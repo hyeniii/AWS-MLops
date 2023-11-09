@@ -10,7 +10,6 @@ RUN pip install -r requirements_local_data_ingest.txt
 
 # Copy folders & files to run pipeline: config, src, pipeline.py
 COPY config ${LAMBDA_TASK_ROOT}/config
-COPY src ${LAMBDA_TASK_ROOT}/src
 COPY get_data.py ${LAMBDA_TASK_ROOT}
 
 # Command to run when running docker container

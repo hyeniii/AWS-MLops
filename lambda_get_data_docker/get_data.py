@@ -2,10 +2,12 @@ import io
 import os
 import zipfile
 from configparser import ConfigParser
+import py7zr
 import requests
 import boto3
 
 def lambda_handler(event, context):
+# def lambda_handler():
     # source_url = "https://archive.ics.uci.edu/static/public/555/apartment+for+rent+classified.zip"
     source_url = event["source_url"]
 
@@ -22,29 +24,29 @@ def lambda_handler(event, context):
         print("Downloaded files successfully.")
 
         # Unzip the file
-        # for zip_file in zip_files:
-        #     print(f"Unzipping file {zip_file}.\n")
-        #     try:
-        #         with py7zr.SevenZipFile(zipfile_path + zip_file, mode='r') as archive:
-        #             # Extract all the contents to the specified directory
-        #             archive.extract(zipfile_path)
-        #     except Exception as err:
-        #         print(f"An error has occured during unzipping the file: {err}.")
+        for zip_file in zip_files:
+            print(f"Unzipping file {zip_file}.\n")
+            try:
+                with py7zr.SevenZipFile(zipfile_path + zip_file, mode='r') as archive:
+                    # Extract all the contents to the specified directory
+                    archive.extract(zipfile_path)
+            except Exception as err:
+                print(f"An error has occured during unzipping the file: {err}.")
 
-        # data_files = [file for file in os.listdir(zipfile_path) if file.endswith(".csv")]
-        
-        for file in zip_files:
-            if file.endswith("100K.7z"):
-                os.rename(zipfile_path + file, zipfile_path + "train.7z")
-            if file.endswith("10K.7z"):
-                os.rename(zipfile_path + file, zipfile_path + "test.7z")
-        zip_files = [file for file in os.listdir(zipfile_path) if file.endswith(".7z")]
-        print(zip_files)
+        data_files = [file for file in os.listdir(zipfile_path) if file.endswith(".csv")]
+        print(data_files)
+        for file in data_files:
+            if file.endswith("100K.csv"):
+                os.rename(zipfile_path + file, zipfile_path + "train.csv")
+            if file.endswith("10K.csv"):
+                os.rename(zipfile_path + file, zipfile_path + "test.csv")
+        data_files = [file for file in os.listdir(zipfile_path) if file.endswith(".csv")]
+        print(data_files)
 
         #
         # setup AWS S3 access based on config file:
         #
-        config_file = 'config.ini'
+        config_file = 'config/config.ini'
         s3_profile = 'aws-mlops-s3readwrite'
 
         os.environ['AWS_SHARED_CREDENTIALS_FILE'] = config_file
@@ -57,11 +59,9 @@ def lambda_handler(event, context):
         
         s3 = boto3.resource('s3')
         bucket = s3.Bucket(bucketname)
-        print(s3)
 
         # Uploading the zipfiles to s3
-        for file in zip_files:
-            print(f"Uploading {file} to s3 bucket {bucketname}.")
+        for file in data_files:
             bucket.upload_file(zipfile_path +  file, file)
         print(f"Uploaded files to s3 bucket {bucketname} successfully.")
 
