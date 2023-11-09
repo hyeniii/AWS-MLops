@@ -27,8 +27,8 @@ from configparser import ConfigParser
 import requests  # calling web service
 # import json  # relational-object mapping
 
-import matplotlib.pyplot as plt
-import matplotlib.image as img
+# import matplotlib.pyplot as plt
+# import matplotlib.image as img
 
 import streamlit as st
 

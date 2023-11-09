@@ -46,7 +46,9 @@ runs/*
 
 #Config files
 config/*.ini
-*/config.ini
+**/config.ini
+**/config.ini
+*.ini
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

@@ -27,21 +27,10 @@ from configparser import ConfigParser
 import requests  # calling web service
 # import json  # relational-object mapping
 
-import matplotlib.pyplot as plt
-import matplotlib.image as img
+# import matplotlib.pyplot as plt
+# import matplotlib.image as img
 
 import streamlit as st
-
-###################################################################
-#
-# classes
-#
-# class User:
-#   userid: int  # these must match columns from DB table
-#   email: str
-#   lastname: str
-#   firstname: str
-#   bucketfolder: str
 
 ###################################################################
 #
