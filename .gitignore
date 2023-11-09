@@ -147,6 +147,7 @@ aws-mlops/*
 lambda_data_ingestion/*
 streamlit_app/*
 client_app/*
+api_make_description/*
 .env
 .venv
 env/
