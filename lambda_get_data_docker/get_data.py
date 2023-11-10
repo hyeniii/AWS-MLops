@@ -62,7 +62,7 @@ def lambda_handler(event, context):
 
         # Uploading the zipfiles to s3
         for file in data_files:
-            bucket.upload_file(zipfile_path +  file, file)
+            bucket.upload_file(zipfile_path +  file, "data/raw/" + file)
         print(f"Uploaded files to s3 bucket {bucketname} successfully.")
 
         return {
