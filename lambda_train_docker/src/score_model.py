@@ -12,8 +12,7 @@ from sklearn.ensemble import RandomForestRegressor
 # Set logger
 logger = logging.getLogger(__name__)
 
-def score_model(test_df: pd.DataFrame, tmo: RandomForestRegressor, target_var: str, 
-                initial_features: typing.List[str]) -> pd.DataFrame:
+def score_model(test_df: pd.DataFrame, tmo: RandomForestRegressor, target_var: str) -> pd.DataFrame:
     """
     Predict target for test set using a trained Random Forest model.
 
@@ -39,7 +38,7 @@ def score_model(test_df: pd.DataFrame, tmo: RandomForestRegressor, target_var: s
     logger.info("Predicting values for test set")
     try:
         # Predict target for test set
-        y_pred = tmo.predict(x_test[initial_features])
+        y_pred = tmo.predict(x_test)
     except (KeyError, TypeError) as err:
         logger.error("An error occurred when predicting values for the test set. " +
                     "The process can't continue. Error: %s", err)

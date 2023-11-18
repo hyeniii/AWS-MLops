@@ -13,6 +13,9 @@ import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
 
 # Set logger
 logger = logging.getLogger(__name__)
@@ -42,11 +45,35 @@ def train_model(data: pd.DataFrame, target_var: str, initial_features: typing.Li
             - A pandas DataFrame containing the test data used to evaluate the trained model.
             - A pandas DataFrame containing the cross-validation results.
     """
-	# --- Split data into train & test ---
-    logger.info("Splitting data in train and test.")
+
+    # --- Split data into features & target ---
+    logger.info("Splitting data in train and test...")
     target = data[target_var]
-    features = data.drop(target_var, axis = 1)
+    features = data[initial_features]
     logger.debug("Features and target extracted.")
+    
+    # --- OHE Categorical Features ---
+    # Identify categorical variables
+    logger.info("Identifying categorical features...")
+    cat_features = features.select_dtypes(include=['object', 'category']).columns.tolist()
+    logger.info("Categorical features identified: %s", cat_features)
+
+    # OneHot Encoding for Selected Categorical Variables
+    if cat_features:
+        logger.info("OHE categorical features...")
+        encoder = OneHotEncoder(sparse=False, handle_unknown='ignore')
+        encoded_cats = encoder.fit_transform(features[cat_features])
+
+
+        # Drop original categorical columns and concatenate encoded ones
+        logger.info("Replacing categorical variables with OHE version.")
+        features = features.drop(cat_features, axis=1)
+        encoded_cats_df = pd.DataFrame(encoded_cats, columns=encoder.get_feature_names_out(cat_features))
+        features = pd.concat([features, encoded_cats_df], axis=1)
+        logger.info("Finished OHE of categorical features.")
+    
+    # --- Split data into train & test ---
+    logger.info("Starting splitting of train and test...")
     
     # Validate test_size in (0,1)
     try:
@@ -79,16 +106,17 @@ def train_model(data: pd.DataFrame, target_var: str, initial_features: typing.Li
 
 	
     # --- CV and hyperparameter tuning ---
-    
+
     # Define a Random Forest object & grid search 
-    logger.info("Starting modeling with cv for train data.")
+    logger.info("Starting modeling with cv for train data...")
     mod = RandomForestRegressor()
     grid_search = GridSearchCV(mod, param_grid = rf_params, cv = k_cv, n_jobs = -1, verbose = 1)
 
     # Fit model 
     try: 
         logger.info("Starting grid search fit:")
-        grid_search.fit(x_train[initial_features], y_train)
+        #grid_search.fit(x_train[initial_features], y_train)
+        grid_search.fit(x_train, y_train)
     except Exception as err:
         logger.error("Unexpected error occured during cross-validation. The process can't continue. " +
               "Error: %s", err)
