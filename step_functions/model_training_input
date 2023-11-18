@@ -1,0 +1,5 @@
+{
+  "ingestData": true,
+  "source_url": "https://archive.ics.uci.edu/static/public/555/apartment+for+rent+classified.zip",
+  "modelConfigKey": "model-config.yaml"
+}
