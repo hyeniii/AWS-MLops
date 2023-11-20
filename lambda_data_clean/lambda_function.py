@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import geolocate as gl
 import aws_utils as au
@@ -5,6 +6,7 @@ import configparser
 from io import BytesIO, StringIO
 import logging
 import json
+import random
 import yaml
 import traceback
 
@@ -21,20 +23,7 @@ def apply_reverse_geocode(row):
         logger.error(f"Error in reverse geocoding: {e}", exc_info=True)
         return row
 
-def lambda_handler(event, context):
-    try:
-        ############### DATA CLEAN ###############
-        ## load configs ##
-        config = configparser.ConfigParser()
-        # Read the config.ini file
-        config.read('config.ini')
-
-        with open('data_clean_config.yaml', 'r') as file:
-            dc_config = yaml.safe_load(file)
-
-        ## connect to s3
-        s3 = au.s3_client(config)
-        logger.info("Connected to s3...")
+def train_test_split(s3, config, dc_config):
         ### LOAD DATA ###
         fn1 = au.s3_get_obj(s3, config, dc_config['s3']['raw_data'], dc_config['s3']['raw_download_name'])
         fn2 = au.s3_get_obj(s3, config, dc_config['s3']['raw_data2'], dc_config['s3']['raw2_download_name'])
@@ -46,8 +35,16 @@ def lambda_handler(event, context):
         # df2 = pd.read_csv(StringIO(fn2['Body'].read().decode('ISO-8859-1')), sep=';',dtype={'address': str})
         # merge 2 datasets
         df = pd.concat([df, df2], ignore_index=True, axis=0)
+        df = df.sample(frac=1, random_state=42).reset_index(drop=True)
         logger.info("Columns in the dataframe: %s", df.columns.tolist())
 
+        split_idx = int(len(df) * 0.8)
+        train_set = df[:split_idx]
+        test_set = df[split_idx:]
+        
+        return train_set, test_set
+
+def data_clean(df, s3, config, dc_config, subset='train'):
         ### DATA CLEANING ###
         # drop unncessary columns
         logger.info("Starting data cleaning...")
@@ -60,6 +57,7 @@ def lambda_handler(event, context):
         # split str to list of amenities
         df.amenities = df.amenities.apply(lambda x: x.split(',') if pd.notna(x) else [])
         logger.info("Finished data cleaning...")
+
         ### IMPUTE DATA ###
         ## IMPUTE cityname & state ##
         # rows where 'cityname' or 'state' is null
@@ -79,9 +77,17 @@ def lambda_handler(event, context):
         bd_means = df.groupby('bedrooms')[['bathrooms']].transform("mean")
         df['bathrooms'].fillna(round(bd_means['bathrooms'],0), inplace=True)
 
+        ## Standardize rent price to monthly rent
+        df.loc[df['price_type'] == 'Weekly', 'price'] = df['price'] * 4
+        df.loc[df['price_type'] == 'Weekly', 'price_type'] = 'Monthly'
+        df = df[df['price_type'] == 'Monthly']
+
         ## IMPUTE pets_allowed ##
-        df['pets_allowed'] = df['pets_allowed'].fillna("None")
+        # df['pets_allowed'] = df['pets_allowed'].fillna("None")
         df['pets_allowed'].replace("Cats,Dogs,None", "None", inplace=True)
+        df.pets_allowed = df.pets_allowed.apply(lambda x: x.split(',') if pd.notna(x) else [])
+        df['cats_allowed'] = df['pets_allowed'].apply(lambda x: 1 if isinstance(x, list) and 'Cats' in x else 0)
+        df['dogs_allowed'] = df['pets_allowed'].apply(lambda x: 1 if isinstance(x, list) and 'Dogs' in x else 0)
         logger.info("Finished imputing data...")
         ############### FEATURE ENGINEERING ##################
 
@@ -92,26 +98,49 @@ def lambda_handler(event, context):
 
         df['price_per_sq_feet'] = df.price / df.square_feet
         logger.info("Finished feature engieering...")
+
         ############### SAVE DATA TO S3 ###############
         csv_buffer = BytesIO()
         df.to_csv(csv_buffer, index=False)
         csv_buffer.seek(0)
-        _ = au.s3_upload(s3, config, dc_config['s3']['clean_data'], csv_buffer.getvalue())
+        _ = au.s3_upload(s3, config, dc_config['s3'][subset]['clean_data'], csv_buffer.getvalue())
 
         return {
                 'statusCode': 200,
                 'body': json.dumps('Data cleaning and upload completed successfully.')
                 }
+
+
+
+def lambda_handler(event, context):
+    try:
+        # os.chdir('lambda_data_clean')
+        ############### DATA CLEAN ###############
+        ## load configs ##
+        config = configparser.ConfigParser()
+        # Read the config.ini file
+        config.read('config.ini')
+
+        with open('data_clean_config.yaml', 'r') as file:
+            dc_config = yaml.safe_load(file)
+
+        ## connect to s3
+        s3 = au.s3_client(config)
+        logger.info("Connected to s3...")
+
+        # Split data
+        train, test = train_test_split(s3, config, dc_config)
+
+        data_clean(train, s3, config, dc_config, 'train')
+        data_clean(test, s3, config, dc_config, 'test')
+
     except Exception as e:
         # Log the exception
         tb_info = traceback.extract_tb(e.__traceback__)
         # Usually, the last call would be the cause of the error
-        filename, line, func, text = tb_info[-1]
+        filename, line, _, _ = tb_info[-1]
         error_message = f"An error occurred: {e} in file {filename} at line {line}"
         return {
             'statusCode': 500,
             'body': json.dumps(error_message)
         }
-
-# ans = lambda_handler(0,0)
-# print(ans)
