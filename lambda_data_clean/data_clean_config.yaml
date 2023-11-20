@@ -3,7 +3,10 @@ s3:
   raw_download_name: raw_1.csv
   raw_data2: data/raw/raw_2.csv
   raw2_download_name: raw_2.csv
-  clean_data: data/clean/data_cleaned.csv
+  train:
+    clean_data: data/clean/data_cleaned_train.csv
+  test:
+    clean_data: data/clean/data_cleaned_test.csv
 
 dc:
   drop_columns:
