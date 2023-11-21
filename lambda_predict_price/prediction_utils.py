@@ -1,6 +1,7 @@
 """
 This module provides auxiliary functions to predict price of an apartment.
 """
+import boto3
 import pickle
 from pathlib import Path
 import logging
