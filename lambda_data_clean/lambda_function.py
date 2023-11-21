@@ -54,6 +54,10 @@ def data_clean(df, s3, config, dc_config, subset='train'):
         df = df[~(df['latitude'].isna() & df['longitude'].isna())]
         df= df[~df['price'].isna()]
 
+        # make all str lowercase
+        for column in df.select_dtypes(include=['object', 'string']):
+            df[column] = df[column].apply(lambda x: x.lower() if isinstance(x, str) else x)
+
         # split str to list of amenities
         df.amenities = df.amenities.apply(lambda x: x.split(',') if pd.notna(x) else [])
         logger.info("Finished data cleaning...")
@@ -78,23 +82,26 @@ def data_clean(df, s3, config, dc_config, subset='train'):
         df['bathrooms'].fillna(round(bd_means['bathrooms'],0), inplace=True)
 
         ## Standardize rent price to monthly rent
-        df.loc[df['price_type'] == 'Weekly', 'price'] = df['price'] * 4
-        df.loc[df['price_type'] == 'Weekly', 'price_type'] = 'Monthly'
-        df = df[df['price_type'] == 'Monthly']
+        df.loc[df['price_type'] == 'weekly', 'price'] = df['price'] * 4
+        df.loc[df['price_type'] == 'weekly', 'price_type'] = 'monthly'
+        df = df[df['price_type'] == 'monthly']
+
+        # Change has_photo to binary
+        df['has_photo'] = df['has_photo'].replace('thumbnail', 'yes')
 
         ## IMPUTE pets_allowed ##
         # df['pets_allowed'] = df['pets_allowed'].fillna("None")
-        df['pets_allowed'].replace("Cats,Dogs,None", "None", inplace=True)
+        df['pets_allowed'].replace("cats,dogs,none", "none", inplace=True)
         df.pets_allowed = df.pets_allowed.apply(lambda x: x.split(',') if pd.notna(x) else [])
-        df['cats_allowed'] = df['pets_allowed'].apply(lambda x: 1 if isinstance(x, list) and 'Cats' in x else 0)
-        df['dogs_allowed'] = df['pets_allowed'].apply(lambda x: 1 if isinstance(x, list) and 'Dogs' in x else 0)
+        df['cats_allowed'] = df['pets_allowed'].apply(lambda x: 'yes' if isinstance(x, list) and 'cats' in x else 'no')
+        df['dogs_allowed'] = df['pets_allowed'].apply(lambda x: 'yes' if isinstance(x, list) and 'dogs' in x else 'no')
         logger.info("Finished imputing data...")
         ############### FEATURE ENGINEERING ##################
 
         # convert to number of amenities
         df['n_amenities'] = df.amenities.apply(len)
         # drop amentities list
-        df = df.drop(columns=['amenities'])
+        # df = df.drop(columns=['amenities'])
 
         df['price_per_sq_feet'] = df.price / df.square_feet
         logger.info("Finished feature engieering...")
@@ -114,7 +121,6 @@ def data_clean(df, s3, config, dc_config, subset='train'):
 
 def lambda_handler(event, context):
     try:
-        # os.chdir('lambda_data_clean')
         ############### DATA CLEAN ###############
         ## load configs ##
         config = configparser.ConfigParser()
@@ -132,7 +138,9 @@ def lambda_handler(event, context):
         train, test = train_test_split(s3, config, dc_config)
 
         data_clean(train, s3, config, dc_config, 'train')
+        logger.info("Finished cleaning train")
         data_clean(test, s3, config, dc_config, 'test')
+        logger.info("Finished cleaning test")
 
     except Exception as e:
         # Log the exception

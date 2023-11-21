@@ -10,10 +10,8 @@ s3:
 
 dc:
   drop_columns:
-    - id
     - title
     - body
-    - address
     - currency
     - source
     - time
