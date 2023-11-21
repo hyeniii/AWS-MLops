@@ -32,17 +32,6 @@ import requests  # calling web service
 
 import streamlit as st
 
-###################################################################
-#
-# classes
-#
-# class User:
-#   userid: int  # these must match columns from DB table
-#   email: str
-#   lastname: str
-#   firstname: str
-#   bucketfolder: str
-
 #########################################################################
 # main
 #
@@ -57,27 +46,10 @@ print()
 # eliminate traceback so we just get error message:
 sys.tracebacklimit = 0
 
-# #
-# # what config file should we use for this session?
+#
+# what config file should we use for this session?
 #
 config_file = 'client-files/rental-wizard-client-config.ini'
-
-# print("What config file to use for this session?")
-# print("Press ENTER to use default (photoapp-client-config.ini),")
-# print("otherwise enter name of config file>")
-# s = input()
-
-# if s == "":  # use default
-#   pass  # already set
-# else:
-#   config_file = s
-
-# #
-# # does config file exist?
-# #
-# if not pathlib.Path(config_file).is_file():
-#   print("**ERROR: config file '", config_file, "' does not exist, exiting")
-#   sys.exit(0)
 
 #
 # setup base URL to web service:
@@ -87,37 +59,3 @@ configur.read(config_file)
 baseurl = configur.get('client', 'webservice')
 
 print(baseurl)
-
-# #
-# # main processing loop:
-# #
-# cmd = prompt()
-
-# while cmd != 0:
-#   #
-#   if cmd == 1:
-#     stats(baseurl)
-#   elif cmd == 2:
-#     users(baseurl)
-#   elif cmd == 3:
-#     assets(baseurl)
-#   elif cmd == 4:
-#     print("Enter asset id>")
-#     asset_id = input()
-#     download(baseurl, asset_id)
-#   elif cmd == 5:
-#     print("Enter asset id>")
-#     asset_id = input()
-#     download_and_display(baseurl, asset_id)
-#   elif cmd == 6:
-#     bucket(baseurl)
-#   else:
-#     print("** Unknown command, try again...")
-#   #
-#   cmd = prompt()
-
-# #
-# # done
-# #
-# print()
-# print('** done **')
