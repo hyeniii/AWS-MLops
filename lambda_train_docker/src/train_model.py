@@ -7,21 +7,19 @@ import typing
 import sys
 import pickle
 from pathlib import Path
+from joblib import dump
 
 import pandas as pd
 
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import GridSearchCV
-from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder
-from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
 
 # Set logger
 logger = logging.getLogger(__name__)
 
-def train_model(data: pd.DataFrame, target_var: str, initial_features: typing.List[str],
-                rf_params: dict, test_size: float = 0.2, seed: int = 11318, k_cv: int = 5) -> typing.Tuple[
+def train_model(train: pd.DataFrame, test:pd.DataFrame, target_var: str, initial_features: typing.List[str],
+                rf_params: dict, k_cv: int = 5) -> typing.Tuple[
                     RandomForestRegressor, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
     Train a random forest classifier using the specified input features.
@@ -33,9 +31,6 @@ def train_model(data: pd.DataFrame, target_var: str, initial_features: typing.Li
         rf_params: dictionary with the parameters used for defining the model. The keys 
                    should include n_estim (number of trees) and depth (maximum depth of 
                    each tree).
-        test_size: The proportion of the input data to use for testing the trained model.
-                   Defaults to 0.2
-        seed: integer to set seed for random splitting and cv. Defaults to 11318
         k_cv: number of corss-validation folds. Defaults to 5.
 
     Returns:
@@ -45,10 +40,26 @@ def train_model(data: pd.DataFrame, target_var: str, initial_features: typing.Li
             - A pandas DataFrame containing the test data used to evaluate the trained model.
             - A pandas DataFrame containing the cross-validation results.
     """
+    # --- Bind the two datasets to then do OHE on categoricals ---
+
+    # Add dummy to identify entries in each dataset.
+    train["train"] = 1
+    test["train"] = 0
+    logger.debug("train identifier added to train and test dataframes.")
+    
+    #  Check if train and test have the same columns 
+    if set(train.columns) != set(test.columns):
+        logger.error("Error. Train and test dataframe columns differ. Can't continue with training.")
+        sys.exit(1)
+
+    # Concat the two dataframes
+    data = pd.concat([train, test], ignore_index=True)
+    logger.info("Train and test dataframes binded together.")
 
     # --- Split data into features & target ---
-    logger.info("Splitting data in train and test...")
-    target = data[target_var]
+    logger.info("Splitting data in train and test...")    
+    target = data[[target_var,"train"]]
+    initial_features.append("train")
     features = data[initial_features]
     logger.debug("Features and target extracted.")
     
@@ -71,25 +82,19 @@ def train_model(data: pd.DataFrame, target_var: str, initial_features: typing.Li
         encoded_cats_df = pd.DataFrame(encoded_cats, columns=encoder.get_feature_names_out(cat_features))
         features = pd.concat([features, encoded_cats_df], axis=1)
         logger.info("Finished OHE of categorical features.")
-    
+  
     # --- Split data into train & test ---
     logger.info("Starting splitting of train and test...")
-    
-    # Validate test_size in (0,1)
-    try:
-        assert 0 <test_size < 1
-    except AssertionError:
-        logger.error("Invalid test_size. Received %f but test size should be in (0,1). Setting " +
-                       "test_size to default value (0.2).", test_size)
-        test_size = 0.2
-    else:
-        logger.error("    test size: %s", test_size)
 
 	# Split into train & test
     try:
-        x_train, x_test, y_train, y_test = train_test_split(features, target, 
-                                                            test_size = test_size,
-                                                            random_state = seed)
+        #x_train, x_test, y_train, y_test = train_test_split(features, target, 
+        #                                                    test_size = test_size,
+        #                                                    random_state = seed)
+        x_train = features[features["train"] == 1].drop("train", axis = 1)
+        x_test = features[features["train"] == 0].drop("train", axis = 1)
+        y_train = target[target["train"] == 1].drop("train", axis = 1)
+        y_test = target[target["train"] == 0].drop("train", axis = 1)
     except ValueError as err:
         logger.error("ValueError while splitting data intro train & test. The process can't "+
                      "continue. Error: ", err)
@@ -99,8 +104,7 @@ def train_model(data: pd.DataFrame, target_var: str, initial_features: typing.Li
                      "can't continue. Error: ", err)
         sys.exit(1)
     else:
-        logger.info("Splitted features and target into train and test. Test size = %0.2f%%",
-                    test_size*100)
+        logger.info("Splitted features and target into train and test again.")
         logger.debug("Train features shape: %s", x_train.shape)
         logger.debug("Test features shape: %s", x_test.shape)
 
@@ -141,7 +145,7 @@ def train_model(data: pd.DataFrame, target_var: str, initial_features: typing.Li
 
 	# Function output
     logger.info("Modeling done. Returning best model, train set, test set and cv results.")
-    return best_model, train, test, cv_results
+    return encoded_cats, best_model, train, test, cv_results
 
 
 def save_data(train: pd.DataFrame, test: pd.DataFrame, cv_results: pd.DataFrame, save_dir: Path) -> None:
@@ -241,3 +245,17 @@ def save_model(tmo: RandomForestRegressor, save_path: Path) -> None:
                        "continue without saving the pickled model. Error: %s", err)
     else:
         logger.info("Model saved as pickle file at %s", save_path)
+
+def save_encoder(encoder, filepath):
+    """
+    Save the One-Hot Encoder object to a file using joblib.
+
+    Args:
+        encoder: The One-Hot Encoder object to be saved.
+        filepath: The file path where the encoder should be saved.
+    """
+    try:
+        dump(encoder, filepath)
+        logger.info("Encoder saved successfully to %s", filepath)
+    except Exception as err:
+        logger.warning("Error saving encoder. Process will continue without saving the encoder. Error: %s", eRR)

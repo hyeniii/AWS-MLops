@@ -86,24 +86,38 @@ def lambda_handler(event, context):
 
 
     # ----------------------------------------------------------------
-    # Download clean data csv file from S3 bucket
+    # Download train data csv file from S3 bucket
     # ----------------------------------------------------------------
-    cleanData_filename = "/tmp/clean_data.csv"
-
-    # Download file from s3
-    logger.info("**Downloading clean data from S3**")
-    dataKey = model_config.get("run_config")["clean_data_key"]
-    logger.info("Data key: %s", dataKey)
-    bucket.download_file(dataKey, cleanData_filename)
-    logger.info("**Clean data downloaded from S3 to %s **", cleanData_filename)
+    train_filename = "/tmp/data_cleaned_train.csv"
     
+    # Download train file from s3
+    logger.info("**Downloading train data from S3**")
+    cleanKey = model_config.get("run_config")["clean_train_key"]
+    logger.info("Clean train key: %s", cleanKey)
+    bucket.download_file(cleanKey, train_filename)
+    logger.info("**Clean train data downloaded from S3 to %s **", train_filename)
 
     # Read clean data 
-    logger.info("Reading clean data into pandas dataframe")
-    data = pd.read_csv(cleanData_filename)
+    logger.info("Reading clean train data into pandas dataframe")
+    train = pd.read_csv(train_filename)
     logger.info("Clean data read into pandas dataframe")
     
+    # ----------------------------------------------------------------
+    # Download train data csv file from S3 bucket
+    # ----------------------------------------------------------------
+    test_filename = "/tmp/data_cleaned_test.csv"
 
+    # Download test file from s3
+    logger.info("**Downloading test data from S3**")
+    testKey = model_config.get("run_config")["clean_test_key"]
+    logger.info("Clean test key: %s", testKey)
+    bucket.download_file(testKey, test_filename)
+    logger.info("**Clean test data downloaded from S3 to %s **", test_filename)
+    
+    # Read clean data 
+    logger.info("Reading clean test data into pandas dataframe")
+    test = pd.read_csv(test_filename)
+    logger.info("Clean data read into pandas dataframe")
 
     # ----------------------------------------------------------------
     # Train model, predict and evaluate
@@ -116,7 +130,7 @@ def lambda_handler(event, context):
 
     # Split data into train/test set and train model based on config; save each to disk
     logger.info("** Starting model training **")
-    tmo, train, test, cv_result = tm.train_model(data,  **model_config["train_model"])
+    encoder, tmo, train, test, cv_result = tm.train_model(train, test,  **model_config["train_model"])
     logger.info("** Finished model training **")
     
     logger.info("** Saving training data to local folder **")
@@ -125,6 +139,10 @@ def lambda_handler(event, context):
 
     logger.info("** Saving tmo to local folder **")
     tm.save_model(tmo, results_dir / "tmo.pkl")
+    logger.info("** Saved tmo to local folder %s **", results_dir)
+
+    logger.info("** Saving encoder to local folder **")
+    tm.save_encoder(encoder, results_dir / "encoder.joblib")
     logger.info("** Saved tmo to local folder %s **", results_dir)
 
 
