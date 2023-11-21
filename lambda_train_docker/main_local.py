@@ -60,12 +60,16 @@ if __name__ == "__main__":
     # Split data into train/test set and train model based on config; save each to disk
     logging.info("Starting model training")
     # Split data into train/test set and train model based on config; save each to disk
-    tmo, train, test, cv_result = tm.train_model(data,  **config["train_model"])
+    encoder, tmo, train, test, cv_result = tm.train_model(data,  **config["train_model"])
     logging.info("Finish model training.")
+    tm.save_en(train, test, cv_result, artifacts)
+    logging.info("Train, test, cv_results saved to folder %s.", artifacts)
     tm.save_data(train, test, cv_result, artifacts)
     logging.info("Train, test, cv_results saved to folder %s.", artifacts)
     tm.save_model(tmo, artifacts/"tmo.pkl")
     logging.info("Model saved to folder %s.", artifacts)
+    tm.save_model(encoder, artifacts/"encoder.joblib")
+    logging.info("Encoder for categorical variables saved to folder %s.", artifacts)
 
     # Score model on test set; save scores to disk
     logging.info("Starting model scring")

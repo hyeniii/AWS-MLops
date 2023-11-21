@@ -7,7 +7,7 @@ import typing
 import sys
 import pickle
 from pathlib import Path
-from joblib import dump
+import joblib
 
 import pandas as pd
 
@@ -145,7 +145,7 @@ def train_model(train: pd.DataFrame, test:pd.DataFrame, target_var: str, initial
 
 	# Function output
     logger.info("Modeling done. Returning best model, train set, test set and cv results.")
-    return encoded_cats, best_model, train, test, cv_results
+    return encoder, best_model, train, test, cv_results
 
 
 def save_data(train: pd.DataFrame, test: pd.DataFrame, cv_results: pd.DataFrame, save_dir: Path) -> None:
@@ -255,7 +255,8 @@ def save_encoder(encoder, filepath):
         filepath: The file path where the encoder should be saved.
     """
     try:
-        dump(encoder, filepath)
+        joblib.dump(encoder, filepath)
+        print(encoder)
         logger.info("Encoder saved successfully to %s", filepath)
     except Exception as err:
-        logger.warning("Error saving encoder. Process will continue without saving the encoder. Error: %s", eRR)
+        logger.warning("Error saving encoder. Process will continue without saving the encoder. Error: %s", err)
