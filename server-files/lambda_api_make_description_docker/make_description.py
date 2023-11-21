@@ -31,7 +31,7 @@ def lambda_handler(event, context):
         square_feet = event["square_feet"]
         cityname = event["cityname"]
         has_photos = None
-        if event["has_photos"] == "Yes": 
+        if event["has_photo"] == "Yes": 
             has_photos = "There are display pictures."
         else:
             has_photos = "There are no display pictures."

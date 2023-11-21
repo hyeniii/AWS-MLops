@@ -254,19 +254,21 @@ state_list = ('AK', 'AL', 'AR', 'AZ', 'CA', 'CO', 'CT', 'DC', 'DE', 'FL', 'GA',
 state = st.selectbox("Please select the state.", state_list)
 cityname = st.text_input("Please enter the name of the city.")
 zipcode = st.text_input("Please enter the zipcode.")
+fee = st.number_input("Please enter the fee.")
 
 input_data = {
-      "bathrooms": bathrooms,
-      "bedrooms": bedrooms,
+      "bathrooms": int(bathrooms),
+      "bedrooms": int(bedrooms),
       "amenities": amenities,
-      "has_photos": has_photos,
+      "has_photo": has_photos,
       "dogs_allowed": dogs_allowed,
       "cats_allowed": cats_allowed,
       "square_feet": square_feet,
       "address": address,
       "cityname": cityname,
       "state": state,
-      "zipcode": zipcode
+      "zipcode": zipcode,
+      "fee": fee
     }
 
 # eliminate traceback so we just get error message:
