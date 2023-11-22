@@ -124,22 +124,19 @@ else:
 
 print(ingest_data)
 
-data_url = configur.get('source', 'url')
+data_url = str(configur.get('source', 'url'))
 
-model_config = configur.get('modelConfig', 'modelConfigKey')
+model_config = str(configur.get('modelConfig', 'modelConfigKey'))
 
-pipeline_data = {
-    "ingestData": ingest_data,
-    "source_url": data_url,
-    "modelConfigKey": model_config
-    }
+pipeline_data = "ingestData: {},source_url: {},modelConfigKey: {}".format(ingest_data, data_url, model_config)
+pipeline_data = "{"+pipeline_data+"}"
 
 arn = configur.get('train_pipeline', 'stateMachineArn')
 
 time_now = datetime.now()
 pipeline_name = "train-pipeline-"+time_now.strftime('%Y-%m-%d_%H-%M-%S')
 
-input_data = {"input": str(pipeline_data).replace(" ", ""),
+input_data = {"input": pipeline_data,
             "name": pipeline_name,
             "stateMachineArn": arn
             }
