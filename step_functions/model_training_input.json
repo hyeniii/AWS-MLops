@@ -1,5 +1,16 @@
+# For step function tests
 {
   "ingestData": true,
   "source_url": "https://archive.ics.uci.edu/static/public/555/apartment+for+rent+classified.zip",
   "modelConfigKey": "model-config-new-split.yaml"
+}
+
+# For API Gateway tests
+{
+  "input": "{
+    \"ingestData\": true,
+    \"source_url\": \"https://archive.ics.uci.edu/static/public/555/apartment+for+rent+classified.zip\",
+    \"modelConfigKey\": \"model-config-new-split.yaml\"}",
+  "name": "Test1-train-pipeline",
+  "stateMachineArn": "arn:aws:states:us-east-2:903071778109:stateMachine:train_pipeline"
 }
