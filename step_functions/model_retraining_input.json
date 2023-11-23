@@ -6,9 +6,7 @@
 
 # For API Gateway tests
 {
-  "input": "{
-    \"ingestData\": false,
-    \"modelConfigKey\": \"model-config-new-split.yaml\"}",
+  "input": "{\"ingestData\": false,\"modelConfigKey\": \"model-config-new-split.yaml\"}",
   "name": "Test1-retrain-pipeline",
   "stateMachineArn": "arn:aws:states:us-east-2:903071778109:stateMachine:train_pipeline"
 }
