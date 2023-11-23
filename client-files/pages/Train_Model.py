@@ -56,13 +56,17 @@ def train_model(baseurl, input_data) -> None:
     data = json.dumps(input_data)
     print(data)
 
+    # headers = {
+    # "Content-Type": "application/json"
+    # }
+
     ###################################################################################
     # call the web service:
     ###################################################################################
     api = '/train_pipeline'
     url = baseurl + api
 
-    res = requests.post(url, json=data)
+    res = requests.post(url, json=data) # headers=headers, 
     print(res.json())
 
     ###################################################################################
@@ -132,6 +136,11 @@ model_config = str(configur.get('modelConfig', 'modelConfigKey'))
 
 pipeline_data = "\"ingestData\": {},\"source_url\": \"{}\",\"modelConfigKey\": \"{}\"".format(ingest_data, data_url, model_config)
 pipeline_data = "{"+pipeline_data+"}"
+
+# pipeline_data = {"ingestData": ingest_data,
+#                 "source_url": data_url,
+#                 "modelConfigKey": model_config}
+
 print(pipeline_data)
 
 arn = configur.get('train_pipeline', 'stateMachineArn')
