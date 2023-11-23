@@ -21,6 +21,7 @@ import pathlib
 import logging
 import sys
 import base64
+import json
 from configparser import ConfigParser
 from datetime import datetime
 
@@ -52,7 +53,8 @@ def train_model(baseurl, input_data) -> None:
     ###################################################################################
     # build the data packet:
     ###################################################################################
-    data = input_data
+    data = json.dumps(input_data)
+    print(data)
 
     ###################################################################################
     # call the web service:
@@ -128,8 +130,9 @@ data_url = str(configur.get('source', 'url'))
 
 model_config = str(configur.get('modelConfig', 'modelConfigKey'))
 
-pipeline_data = "ingestData: {},source_url: {},modelConfigKey: {}".format(ingest_data, data_url, model_config)
+pipeline_data = "\"ingestData\": {},\"source_url\": \"{}\",\"modelConfigKey\": \"{}\"".format(ingest_data, data_url, model_config)
 pipeline_data = "{"+pipeline_data+"}"
+print(pipeline_data)
 
 arn = configur.get('train_pipeline', 'stateMachineArn')
 
