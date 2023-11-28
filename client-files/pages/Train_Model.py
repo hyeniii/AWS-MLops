@@ -23,12 +23,23 @@ import sys
 import base64
 import json
 from configparser import ConfigParser
-from datetime import datetime
+from datetime import datetime, timezone
+import boto3
 
 import requests  # calling web service
-# import json  # relational-object mapping
 
 import streamlit as st
+
+###################################################################
+#
+# List all files in S3 folder
+#
+def list_files(bucket_name, prefix):
+    """List files in specific S3 URL"""
+    client = boto3.client('s3')
+    response = client.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
+    files = [obj['Key'] for obj in response.get('Contents', []) if obj['Key'] != prefix]
+    return files
 
 ###################################################################
 #
@@ -51,46 +62,42 @@ def train_model(baseurl, input_data) -> None:
   
   try:
     ###################################################################################
-    # build the data packet:
-    ###################################################################################
-    data = json.dumps(input_data)
-    print(data)
-
-    # headers = {
-    # "Content-Type": "application/json"
-    # }
-
-    ###################################################################################
     # call the web service:
     ###################################################################################
     api = '/train_pipeline'
     url = baseurl + api
 
-    res = requests.post(url, json=data) # headers=headers, 
+    res = requests.post(url, json=input_data) # headers=headers, 
+    print("Response from webservice: ")
     print(res.json())
+
+    # Get response body
+    body = res.json()
 
     ###################################################################################
     # let's look at what we got back:
     ###################################################################################
-    if res.status_code != 200:
-      # failed:
-      print("Failed with status code:", res.status_code)
-      print("url: " + url)
-      body = res.json()
-      if res.status_code == 400:  # we'll have an error message
-        print("Error message:", body["body"])
+    if "executionArn" not in body.keys():
       #
-      return body
+      # failed:
+      #
+      print("url: " + url)
+      print(f"Execution of step function failed.")
 
+      # Add status 400 to response
+      response = {'statusCode': 400}
+      response.update(body)
+    else:
     #
     # success:
     #
-    body = res.json()
-    print(body)
+      print("Successfully triggered training pipeline.")
 
-    if body["statusCode"] == 200:
-        print("The training is successfully completed.")
-        return body
+      # Add status 200 to response
+      response = {'statusCode': 200}
+      response.update(body)
+    
+    return response
 
   except Exception as e:
     print("train_pipeline() failed:")
@@ -121,38 +128,35 @@ st.title('** Let\'s get started! **')
 st.sidebar.success("Employee Page: Train the Model.")
 st.header('Please input these details.')
 
-ingest_data = st.selectbox("Do you want to ingest data (Recommended for training the first time)?", ("Yes", "No"))
+# --- Get user inputs --- 
+# Training or retraining? 
+ingest_data = st.selectbox("Do you want to ingest data (Recommended for training the first time)?", ("---Select an option--", "Yes", "No"))
 
 if ingest_data == "Yes":
     ingest_data = "true"
 else:
     ingest_data = "false"
 
-print(ingest_data)
+print(f"Ingest data: {ingest_data}")
 
+# Source of data
 data_url = str(configur.get('source', 'url'))
+print(f"Data URL: {data_url}")
 
-model_config = str(configur.get('modelConfig', 'modelConfigKey'))
+# Model Config file
+#model_config = str(configur.get('modelConfig', 'modelConfigKey'))
+configFilesList = ["---Select a file---"]
+configFilesList.extend(list_files("aws-mlops-project", "config/"))
+print("class config file list:" )
+print(configFilesList)
+model_config = st.selectbox("Select model config. file", configFilesList) 
+print(f"Model config key: {model_config}")
 
-pipeline_data = "\"ingestData\": {},\"source_url\": \"{}\",\"modelConfigKey\": \"{}\"".format(ingest_data, data_url, model_config)
-pipeline_data = "{"+pipeline_data+"}"
-
-# pipeline_data = {"ingestData": ingest_data,
-#                 "source_url": data_url,
-#                 "modelConfigKey": model_config}
-
-print(pipeline_data)
-
-arn = configur.get('train_pipeline', 'stateMachineArn')
-
-time_now = datetime.now()
-pipeline_name = "train-pipeline-"+time_now.strftime('%Y-%m-%d_%H-%M-%S')
-
-input_data = {"input": pipeline_data,
-            "name": pipeline_name,
-            "stateMachineArn": arn
-            }
-
+# Dictionary of user inputs 
+input_data = {"ingestData": ingest_data,
+                 "source_url": data_url,
+                 "modelConfigKey": model_config}
+print("Input data to be passed: ")
 print(input_data)
 
 #########################################################################
@@ -160,16 +164,29 @@ print(input_data)
 #
 baseurl = configur.get('client', 'webservice')
 
-print(baseurl)
+print(f"Base URL: {baseurl}")
 print("Lets train the model.....")
 
 if st.button("Train model."):
+
+  # Trigger step function
   train_result = train_model(baseurl, input_data)
+  
+  print("Train results: ")
   print(train_result)
+
+  # If trigger is succesful, return info of state machine 
   if train_result['statusCode'] == 200:
-    st.write("Training has been completed successfully.")
+    st.write("Model training execution has started successfully.")
+    startTime = datetime.utcfromtimestamp(train_result['startDate']).strftime("%Y-%m-%d %H:%M:%S")
+    st.write(f"    Execution began at {startTime} UTC.")
+    st.write("    You can track the execution status in this ARN:")
+    st.write(f"    {train_result['executionArn']}")
+  # If trigger is not sucessfull return body with error/problem message
   else:
-    print("There was an error during training.")
-    st.write(train_model["body"])
+    print("There was an error during training. Error:")
+    print("train_result")
+    st.write("There was an error during training. Error: ")
+    st.write(train_result)
 else:
-  st.write('Sorry, the specs you have shared are not valid. Try again.')
+  st.write('Select model specifications to start training.')
