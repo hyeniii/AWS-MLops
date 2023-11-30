@@ -171,8 +171,8 @@ st.set_page_config(
 st.title('** Let\'s get started! **')
 st.sidebar.success("Let's get started.")
 st.header('Please input these details.')
-bathrooms = st.number_input("Please enter the number of bedrooms.", 0, 10)
-bedrooms = st.number_input("Please enter the number of bathrooms.", 0, 10)
+bathrooms = st.number_input("Please enter the number of bathrooms.", 0, 10)
+bedrooms = st.number_input("Please enter the number of bedrooms.", 0, 10)
 amenities = st.multiselect(
     'What amenities does your apartment have?',
     options = ['Internet Access', 'Playground', 'Basketball', 'Refrigerator', 'Golf', 

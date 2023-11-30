@@ -1,6 +1,6 @@
 # Avoid uploading config.ini files
-*/config.ini
-*/config/*.ini
+**/config.ini
+**/config/*.ini
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

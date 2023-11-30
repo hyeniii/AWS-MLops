@@ -35,7 +35,13 @@ import streamlit as st
 #########################################################################
 # main
 #
-st.title('** Welcome to Rental Wizard **')
+st.title('    ** Welcome to Rental Wizard **')
+# Create two columns for Description and Price buttons
+col1, col2, col3 = st.columns([0.3,0.6,0.2])
+
+with col2:
+    st.image("client-files/logo.png", width = 300)
+
 st.header('Who are we?')
 st.write('Welcome to Rental Wizard, your ultimate tool for simplifying the rental experience! We understand that finding the perfect rental property and creating an attractive listing can be a daunting task. That\'s why we\'ve designed Rental Wizard to make this process not only straightforward but also effective. As renters ourselves, we know the frustration of trying to determine a fair rental price and then struggling to craft an appealing listing. With Rental Wizard, we\'ve taken the guesswork out of the equation.')
 st.write('With our user-friendly platform, you can predict a reasonable rental price for your property with ease, ensuring that you\'re not overcharging or undervaluing your rental. Our powerful algorithms consider various factors like location, property size, and market trends, giving you a reliable estimate.')

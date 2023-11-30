@@ -145,12 +145,13 @@ print(f"Data URL: {data_url}")
 
 # Model Config file
 #model_config = str(configur.get('modelConfig', 'modelConfigKey'))
-configFilesList = ["---Select a file---"]
-configFilesList.extend(list_files("aws-mlops-project", "config/"))
-print("class config file list:" )
-print(configFilesList)
-model_config = st.selectbox("Select a model config. file from the list of current files in S3:", configFilesList) 
-model_config = model_config.replace("config/", "")
+#configFilesList = ["---Select a file---"]
+#configFilesList.extend(list_files("aws-mlops-project", "config/"))
+#print("class config file list:" )
+#print(configFilesList)
+#model_config = st.selectbox("Select a model config. file from the list of current files in S3:", configFilesList) 
+model_config = st.text_input("Insert the name of the model config file you want to use.")
+#model_config = model_config.replace("config/", "")
 print(f"Model config key: {model_config}")
 
 # Dictionary of user inputs 
