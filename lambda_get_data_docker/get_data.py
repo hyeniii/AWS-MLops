@@ -37,9 +37,9 @@ def lambda_handler(event, context):
         print(data_files)
         for file in data_files:
             if file.endswith("100K.csv"):
-                os.rename(zipfile_path + file, zipfile_path + "train.csv")
+                os.rename(zipfile_path + file, zipfile_path + "raw_1.csv")
             if file.endswith("10K.csv"):
-                os.rename(zipfile_path + file, zipfile_path + "test.csv")
+                os.rename(zipfile_path + file, zipfile_path + "raw_2.csv")
         data_files = [file for file in os.listdir(zipfile_path) if file.endswith(".csv")]
         print(data_files)
 
