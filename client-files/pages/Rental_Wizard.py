@@ -6,7 +6,6 @@
 # Final Project for CS 310
 #
 # Authors:
-#   YOUR NAME
 #   Sharika Mahadevan, Hye Won Hwang, Alejandra Lelo de Larrea Ibarra
 #   Northwestern University
 #   CS 310
@@ -22,6 +21,7 @@ import pathlib
 import logging
 import sys
 import base64
+import json
 from configparser import ConfigParser
 
 import requests  # calling web service
@@ -39,7 +39,7 @@ import streamlit as st
 
 def make_prediction(baseurl, input_data) -> float:
   """
-  Make Prediction of rental price based on users
+  Make Prediction of rental price based on user input
   
   Parameters
   ----------
@@ -52,119 +52,56 @@ def make_prediction(baseurl, input_data) -> float:
   """
   
   try:
-    #
+    ##################################################################################
     # build the data packet:
-    #
-    data = {
-      "bathrooms": input_data["bathrooms"],
-      "bedrooms": input_data["bedrooms"],
-      "has_photos": input_data["bedrooms"],
-      "pets_allowed": input_data["pets_allowed"],
-      "square_feet": input_data["square_feet"],
-      "cityname": input_data["cityname"]
-    }
-
-    #
-    # call the web service:
-    #
-    api = '/makeprediction'
-    url = baseurl + api
-
-    res = requests.put(url, json=data)
-
-    #
-    # let's look at what we got back:
-    #
-    if res.status_code != 200:
-      # failed:
-      print("Failed with status code:", res.status_code)
-      print("url: " + url)
-      if res.status_code == 400:  # we'll have an error message
-        body = res.json()
-        print("Error message:", body["message"])
-      #
-      return
-
-    #
-    # success, extract userid:
-    #
-    body = res.json()
-
-    predicted_price = body["predicted_price"]
-    message = body["message"]
-
-    print(f"The rental price is predicted to be ${predicted_price}.")
-
-  except Exception as e:
-    logging.error("make_prediction() failed:")
-    logging.error("url: " + url)
-    logging.error(e)
-    return
-
-###################################################################
-#
-# Add to existing CSV
-#
-def add_data(baseurl, input_data):
-  """
-  Appends new rows to the existing CSV
-  
-  Parameters
-  ----------
-  baseurl: baseurl for web service
-  input_data: Data inputted by the user
-  
-  Returns
-  -------
-  nothing
-  """
-
-  try:
-    #
-    # build the data packet:
-    #
+    ##################################################################################
     data = input_data
 
-    #
+    ##################################################################################
     # call the web service:
-    #
-    api = '/add_data'
+    ##################################################################################
+    api = '/suggest_price'
     url = baseurl + api
 
-    res = requests.put(url, json=data)
+    res = requests.post(url, json=data)
+    print(res.json())
 
-    #
-    # let's look at what we got back:
-    #
+    ##################################################################################
+    # Check if there are errors:
+    ##################################################################################
     if res.status_code != 200:
       # failed:
       print("Failed with status code:", res.status_code)
       print("url: " + url)
       if res.status_code == 400:  # we'll have an error message
         body = res.json()
-        print("Error message:", body["message"])
+        print("Error message:", body["body"])
       #
-      return
+      return res.json()
 
-    #
-    # success, extract userid:
-    #
+    ##################################################################################
+    # success:
+    ##################################################################################
     body = res.json()
+    print(body)
 
-    # predicted_price = body["predicted_price"]
-    message = body["message"]
+    price = json.loads(body['body'])
 
-    print(f"The data has been successfully input by the user.")
+    predicted_price = price["pred_price"]
+
+    print(f"The rental price is predicted to be ${predicted_price}.")
+    return {"statusCode": 200,
+            "pred_price": predicted_price}
 
   except Exception as e:
-    logging.error("add_data() failed:")
+    logging.error("suggest_price() failed:")
     logging.error("url: " + url)
     logging.error(e)
-    return
+    return {'body': json.dumps(e)}
 
 ###################################################################
 #
-# Add to existing CSV
+# Generate Description for Apartment
 #
 def make_description(baseurl, input_data):
   """
@@ -181,47 +118,45 @@ def make_description(baseurl, input_data):
   """
 
   try:
-    #
+    ##################################################################################
     # build the data packet:
-    #
+    ##################################################################################
     data = input_data
 
-    #
+    ##################################################################################
     # call the web service:
-    #
+    ##################################################################################
     api = '/make_description'
     url = baseurl + api
 
     res = requests.post(url, json=data)
 
-    #
+    ##################################################################################
     # let's look at what we got back:
-    #
+    ##################################################################################
     if res.status_code != 200:
       # failed:
       print("Failed with status code:", res.status_code)
       print("url: " + url)
       if res.status_code == 400:  # we'll have an error message
         body = res.json()
-        print("Error message:", body["message"])
+        print("Error message:", body["body"])
       #
-      return
+      return res.json()
 
-    #
-    # success, extract userid:
-    #
+    ##################################################################################
+    # success:
+    ##################################################################################
     body = res.json()
     print(body)
-
-    predictedpo_description = body["description"]
 
     print(f"The description has been successfully generated by user. Below is the description:\n\n")
     return body
 
   except Exception as e:
-    logging.error("make_description() failed:")
-    logging.error("url: " + url)
-    logging.error(e)
+    print("make_description() failed:")
+    print("url: " + url)
+    print(e)
     return
 
 #########################################################################
@@ -236,11 +171,16 @@ st.set_page_config(
 st.title('** Let\'s get started! **')
 st.sidebar.success("Let's get started.")
 st.header('Please input these details.')
-bathrooms = st.number_input("Please enter the number of bedrooms.")
-bedrooms = st.number_input("Please enter the number of bathrooms.")
+bathrooms = st.number_input("Please enter the number of bedrooms.", 0, 10)
+bedrooms = st.number_input("Please enter the number of bathrooms.", 0, 10)
 amenities = st.multiselect(
     'What amenities does your apartment have?',
-    ['Internet Access', 'Playground', 'Basketball', 'Refrigerator', 'Golf', 'AC', 'Dishwasher', 'Wood Floors', 'TV', 'Storage', 'Tennis', 'Patio/Deck', 'Gated', 'View', 'Alarm', 'Clubhouse', 'Doorman', 'Hot Tub', 'Fireplace', 'Washer Dryer', 'Cable or Satellite', 'Pool', 'Luxury', 'Garbage Disposal', 'Parking', 'Elevator', 'Gym'])
+    options = ['Internet Access', 'Playground', 'Basketball', 'Refrigerator', 'Golf', 
+     'AC', 'Dishwasher', 'Wood Floors', 'TV', 'Storage', 'Tennis', 'Patio/Deck', 
+     'Gated', 'View', 'Alarm', 'Clubhouse', 'Doorman', 'Hot Tub', 'Fireplace', 
+     'Washer Dryer', 'Cable or Satellite', 'Pool', 'Luxury', 'Garbage Disposal', 
+     'Parking', 'Elevator', 'Gym'],
+     placeholder = "Select all that apply. Multiple selection if holding ctrl. ")
 has_photos = st.selectbox("Do you have photos?", ("Yes", "No"))
 dogs_allowed = st.selectbox("Are dogs allowed?", ("Yes", "No"))
 cats_allowed = st.selectbox("Are cats allowed?", ("Yes", "No"))
@@ -254,8 +194,9 @@ state_list = ('AK', 'AL', 'AR', 'AZ', 'CA', 'CO', 'CT', 'DC', 'DE', 'FL', 'GA',
 state = st.selectbox("Please select the state.", state_list)
 cityname = st.text_input("Please enter the name of the city.")
 zipcode = st.text_input("Please enter the zipcode.")
-fee = st.number_input("Please enter the fee.")
+fee = st.number_input("Please enter the amount of any additional fees to pay.")
 
+# Create data packet for APIs
 input_data = {
       "bathrooms": int(bathrooms),
       "bedrooms": int(bedrooms),
@@ -278,42 +219,47 @@ sys.tracebacklimit = 0
 # # what config file should we use for this session?
 #
 config_file = 'client-files/rental-wizard-client-config.ini'
-
-# print("What config file to use for this session?")
-# print("Press ENTER to use default (rental-wizard-client-config.ini),")
-# print("otherwise enter name of config file>")
-# s = input()
-
-# if s == "":  # use default
-#   pass  # already set
-# else:
-#   config_file = s
-
-# #
-# # does config file exist?
-# #
-# if not pathlib.Path(config_file).is_file():
-#   print("**ERROR: config file '", config_file, "' does not exist, exiting")
-#   sys.exit(0)
+configur = ConfigParser()
+configur.read(config_file)
 
 #
 # setup base URL to web service:
 #
-configur = ConfigParser()
-configur.read(config_file)
 baseurl = configur.get('client', 'webservice')
 
-print(baseurl)
-print("Lets generate the description.....")
+# Initialize session state for description and price
+if 'generated_description' not in st.session_state:
+  st.session_state['generated_description'] = None
 
-if st.button("Generate a description for your apartment."):
-  generated_description = make_description(baseurl, input_data)
-  print(generated_description)
-  if generated_description['statusCode'] == 200:
-    st.write(generated_description['description'])
-  else:
-    print("There was an error.")
-    st.write(generated_description['description'])
-else:
-  st.write('Sorry, the specs you have shared are not valid. Try again.')
+if 'predicted_price' not in st.session_state:
+  st.session_state['predicted_price'] = None
+
+# Create two columns for Description and Price buttons
+col1, col2 = st.columns(2)
+
+with col1:
+  with st.form(key = "DescriptionForm"):
+    submit_description = st.form_submit_button("Generate a description for your apartment.")
+    if submit_description:
+      st.session_state['generated_description'] = make_description(baseurl, input_data)
+    if st.session_state['generated_description']:
+      if st.session_state['generated_description'].get('statusCode') == 200:
+        st.write(st.session_state['generated_description']['body'])
+      else:
+        st.write("There was an error.")
+        st.write(st.session_state['generated_description'].get('body', ''))
+
+with col2:
+  with st.form(key='PriceForm'):
+    submit_price = st.form_submit_button("Get an estimate of fair price for your apartment.")
+    if submit_price:
+      st.session_state['predicted_price'] = make_prediction(baseurl, input_data)
+    if st.session_state['predicted_price']:
+      if st.session_state['predicted_price'].get('statusCode') == 200:
+        formatted_price = "${:,.2f}".format(st.session_state['predicted_price']['pred_price'])
+        st.write(formatted_price)
+      else:
+        st.write("There was an error.")
+        st.write(st.session_state['predicted_price'].get('body', ''))
+
 

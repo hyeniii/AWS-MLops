@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 def get_model_dict(bucket_name: str, artifacts_prefix: str) -> dict:
     """
-    Retrieves the most recent model file from an AWS S3 bucket and creates a dictionary with
+    Retrieves the trained model from an AWS S3 bucket and creates a dictionary with
     the model name, key, and local path.
 
     Args:

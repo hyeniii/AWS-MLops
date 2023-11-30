@@ -7,7 +7,9 @@ import json
 import os
 
 def lambda_handler(event, context):
-    #Accessing the API Key
+    ##################################################################################
+    # Accessing the API Key
+    ##################################################################################
     config_file = "config/config.ini"
     configur = ConfigParser()
     configur.read(config_file)
@@ -15,15 +17,9 @@ def lambda_handler(event, context):
     print(os.environ["OPENAI_API_KEY"])
 
     try:
-        print("We are inside the lambda.")
-
-        # print(event)
-
-        # if "body" not in event:
-        #     return "event has no body"
-            # raise Exception("event has no body")
-        
-        # body = json.loads(event["body"]) # parse the json
+    ##################################################################################
+    # Accessing the incoming data from body of request
+    ##################################################################################
         
         # Accessing the incoming data
         bedrooms = event["bedrooms"]
@@ -64,27 +60,37 @@ def lambda_handler(event, context):
         # return err
         return {
             'statusCode': 400,
-            'description': err
+            'body': json.dumps(err)
         }
 
+    ##################################################################################
     # Create the prompt for LLM
+    ##################################################################################
     prompt = f"There is a house with {bedrooms} bedrooms, {bathrooms} bathrooms with an area of {square_feet} sq. feet. It is located in {cityname}. {dogs_allowed} {cats_allowed} {has_photos}. {amenities} Make a description for a rental posting on Zillow."
-    model = "gpt-3.5-turbo"
-    num_tokens = 100
     print(prompt)
+
+    ##################################################################################
+    # Set up model parameters
+    ##################################################################################
+    model = "gpt-3.5-turbo"
+    num_tokens = 500 # -1 returns as many tokens as possible given the prompt and the models maximal context size.
+    
     try:
+    ##################################################################################
+    # Generate the LLM Response through LangChain
+    ##################################################################################
         # Define LLM Model
-        llm = OpenAI(temperature=0)
+        llm = OpenAI(temperature=0, max_tokens = num_tokens)
         # Generate response
         response = llm(prompt)
         print(response)
         return {
             'statusCode': 200,
-            'description': response
+            'body': response
         }
     except Exception as err:
         print(err)
         return {
             'statusCode': 400,
-            'description': err
+            'body': json.dumps(err)
         }

@@ -5,21 +5,22 @@ run_config:
   description: Predict apartment rental prices.
   dependencies: requirements.txt
   data_source: https://archive.ics.uci.edu/static/public/555/apartment+for+rent+classified.zip
-  clean_data_key: data/clean/data_cleaned.csv
+  clean_train_key: data/clean/data_cleaned_train.csv
+  clean_test_key: data/clean/data_cleaned_test.csv
   output: results
 
 train_model:
   target_var: price
-  test_size: 0.2
-  seed: 11318
   k_cv: 5
   initial_features:
     - n_amenities
-    - fee
     - bathrooms
     - bedrooms
     - square_feet
-    - pets_allowed
+    - dogs_allowed
+    - cats_allowed
+    - fee
+    - has_photo
   rf_params:
     n_estimators: [10, 50, 100]
     max_depth: [5, 10]
@@ -29,4 +30,4 @@ score_model:
 
 aws:
    bucket_name: aws-mlops-project
-   prefix: modeling_artifacts/full_sample
+   prefix: modeling_artifacts

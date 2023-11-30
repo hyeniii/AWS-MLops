@@ -64,11 +64,12 @@ def lambda_handler(event, context):
     s3 = boto3.resource('s3')
     bucket = s3.Bucket(bucketname)
     print("Connected to S3")
+
     # ----------------------------------------------------------------
     # extract tmo file 
     # ----------------------------------------------------------------
-    # Get model dictionary for most recent model.
-    model_dict = pu.get_model_dict(bucketname, "modeling") # NOTE: SHOULD WE GET THIS PREFIX FROM THE MODEL CONFIG FILE? 
+    # Get model dictionary.
+    model_dict = pu.get_model_dict(bucketname, "modeling_artifacts/")
 
 
     # ----------------------------------------------------------------
