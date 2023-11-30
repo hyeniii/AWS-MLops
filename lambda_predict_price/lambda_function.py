@@ -1,13 +1,10 @@
 import json
 import boto3
 import os
-import pickle
 import joblib
-import io
 import logging
 import yaml
 import pandas as pd 
-from pathlib import Path
 import numpy as np
 import prediction_utils as pu
 from configparser import ConfigParser
@@ -23,6 +20,7 @@ def input_type_checker(input_dict):
       "has_photos": str,
       "dogs_allowed": str,
       "cats_allowed": str,
+      "fee": str,
       "square_feet": int,
       "address": str,
       "cityname": str,
@@ -35,6 +33,8 @@ def input_type_checker(input_dict):
       if key in mapper:
           try:
             input_dict[key] = mapper[key](value)
+            if isinstance(input_dict[key], str):
+                    input_dict[key] = input_dict[key].lower()
           except ValueError as e:
               raise ValueError(f"Invalid type for {key}: {e}")
   return input_dict
@@ -42,7 +42,6 @@ def input_type_checker(input_dict):
 
 def lambda_handler(event, context):
   try:
-    os.chdir('lambda_predict_price')
     print("**STARTED**")
     
     # ----------------------------------------------------------------
@@ -57,10 +56,14 @@ def lambda_handler(event, context):
     
     configur = ConfigParser()
     configur.read(config_file)
+
+    with open('inference_config.yaml', 'r') as file:
+       inf_config = yaml.safe_load(file)
     bucketname = configur.get('s3', 'bucket_name')
     
     s3 = boto3.resource('s3')
     bucket = s3.Bucket(bucketname)
+    print("Connected to S3")
     # ----------------------------------------------------------------
     # extract tmo file 
     # ----------------------------------------------------------------
@@ -71,15 +74,15 @@ def lambda_handler(event, context):
     # ----------------------------------------------------------------
     # Download tmo file from S3 to local filesystem:
     # ----------------------------------------------------------------
-    # Set local name for model config file
-    tmo_filename = "/tmp/tmo.pkl"
 
     # Download file from s3
     logger.info("**Downloading model pikle file from S3**")
-    bucket.download_file(model_dict["tmo_key"], tmo_filename)
+    bucket.download_file(model_dict["tmo_key"], inf_config['model_save_path'])
+    print("Downloaded model pkl file")
     
     # load pickle file
-    model = pu.load_model(tmo_filename)
+    model = pu.load_model(inf_config['model_save_path'])
+    print("Loaded model pkl file")
   
 
     # ----------------------------------------------------------------
@@ -91,24 +94,31 @@ def lambda_handler(event, context):
     else:
       # Get input data from event and convert to pandas df
       input_data_dict = input_type_checker(event)
-      df = pd.DataFrame([input_data_dict]) 
+      df = pd.DataFrame([input_data_dict])
+      print("Prediction input valid")
 
 
     # ----------------------------------------------------------------
     # Cleand and get features 
     # ----------------------------------------------------------------    
-    # features = pd with the cleanned features.
-    df['n_amenities'] = df.amenities.apply(len)
-    # df['price_per_sq_feet'] = df.price / df.square_feet
 
-    object_key = 'modeling_artifacts/new_split/encoder.joblib'
-    local_file_path = '/tmp/encoder.joblib'
 
     # Download the file
-    bucket.download_file(object_key, local_file_path)
-    encoder = joblib.load(local_file_path)
-    encoded_data = encoder.transform(df[['fee', 'has_photo', '']])
-    encoded_df = pd.DataFrame(encoded_data.toarray(), columns=model.get_feature_names_out())
+    bucket.download_file(inf_config['encoder_s3_key'], inf_config['encoder_save_path'])
+    encoder = joblib.load(inf_config['encoder_save_path'])
+    print("Loaded encoder")
+
+    # Transform the categorical data
+    encoded_data = encoder.transform(df[encoder.feature_names_in_.tolist()])
+
+    # Convert the encoded data to DataFrame
+    encoded_df = pd.DataFrame(encoded_data, columns=encoder.get_feature_names_out())
+
+    # Merge the encoded categorical data with the numerical data
+    df = pd.concat([df, encoded_df], axis=1)
+
+    df['n_amenities'] = df.amenities.apply(len)
+    print("Created new features")
 
     # ----------------------------------------------------------------
     # Make prediction
@@ -116,9 +126,9 @@ def lambda_handler(event, context):
     # Get prediction for selected features
 
     if hasattr(model, 'feature_names_in_'):
-      features = model.feature_names_in_
+      features = model.feature_names_in_.tolist()
     try:
-        pred_price = model.predict(encoded_df[features])
+        pred_price = round(model.predict(df[features])[0],2)
     except ValueError as err:
         logger.warning("Error with the feature shape or values. Setting predicted class and" +
                         " probability to NA. Error: %s", err)
@@ -145,19 +155,3 @@ def lambda_handler(event, context):
       'statusCode': 400,
       'body': json.dumps(str(err))
     }
-input_data = {
-      "bathrooms": 2,
-      "bedrooms": 2,
-      "amenities": ['Gym'],
-      "has_photo": 'Yes',
-      "dogs_allowed": 'Yes',
-      "cats_allowed": 'no',
-      "fee": "Yes",
-      "square_feet": 500,
-      "address": 'test address',
-      "cityname": 'Evanston',
-      "state": 'IL',
-      "zipcode": 60201
-    }
-
-lambda_handler(input_data,0)

@@ -9,8 +9,11 @@ COPY requirements_prediction.txt ${LAMBDA_TASK_ROOT}
 RUN pip install -r requirements_prediction.txt
 
 # Copy folders & files to run pipeline: config, src, pipeline.py
-COPY src ${LAMBDA_TASK_ROOT}/src
 COPY lambda_function.py ${LAMBDA_TASK_ROOT}
+COPY prediction_utils.py ${LAMBDA_TASK_ROOT}
+
+COPY config.ini ${LAMBDA_TASK_ROOT}
+COPY inference_config.yaml ${LAMBDA_TASK_ROOT}
 
 # Command to run when running docker container
 CMD ["lambda_function.lambda_handler"]

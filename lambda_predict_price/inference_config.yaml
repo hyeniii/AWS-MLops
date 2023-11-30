@@ -1,0 +1,3 @@
+model_save_path: "/tmp/tmo.pkl"
+encoder_s3_key: 'modeling_artifacts/encoder.joblib'
+encoder_save_path: '/tmp/encoder.joblib'
