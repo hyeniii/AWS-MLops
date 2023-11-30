@@ -149,7 +149,7 @@ configFilesList = ["---Select a file---"]
 configFilesList.extend(list_files("aws-mlops-project", "config/"))
 print("class config file list:" )
 print(configFilesList)
-model_config = st.selectbox("Select model config. file", configFilesList) 
+model_config = st.selectbox("Select a model config. file from the list of current files in S3:", configFilesList) 
 print(f"Model config key: {model_config}")
 
 # Dictionary of user inputs 
