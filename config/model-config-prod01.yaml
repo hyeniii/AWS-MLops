@@ -13,21 +13,19 @@ train_model:
   target_var: price
   k_cv: 5
   initial_features:
-    - n_amenities
     - bathrooms
     - bedrooms
     - square_feet
     - dogs_allowed
     - cats_allowed
     - fee
-    - has_photo
   rf_params:
-    n_estimators: [10, 50, 100]
-    max_depth: [5, 10]
+    n_estimators: [20, 50, 100, 150]
+    max_depth: [5, 10, 15, 20]
 
 score_model: 
   target_var: price
 
 aws:
    bucket_name: aws-mlops-project
-   prefix: modeling_artifacts/new_split
+   prefix: modeling_artifacts
