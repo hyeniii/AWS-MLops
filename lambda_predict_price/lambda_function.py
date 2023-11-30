@@ -1,6 +1,6 @@
+import os
 import json
 import boto3
-import os
 import joblib
 import logging
 import yaml
@@ -52,7 +52,7 @@ def lambda_handler(event, context):
     
     os.environ['AWS_SHARED_CREDENTIALS_FILE'] = config_file
     boto3.setup_default_session(profile_name=s3_profile)
-
+    print("Setting up boto3")
     
     configur = ConfigParser()
     configur.read(config_file)
@@ -60,6 +60,7 @@ def lambda_handler(event, context):
     with open('inference_config.yaml', 'r') as file:
        inf_config = yaml.safe_load(file)
     bucketname = configur.get('s3', 'bucket_name')
+    print("loaded config file")
     
     s3 = boto3.resource('s3')
     bucket = s3.Bucket(bucketname)
@@ -156,3 +157,20 @@ def lambda_handler(event, context):
       'statusCode': 400,
       'body': json.dumps(str(err))
     }
+event = {
+  "bathrooms": 2,
+  "bedrooms": 2,
+  "amenities": [
+    "Gym"
+  ],
+  "has_photo": "Yes",
+  "dogs_allowed": "Yes",
+  "cats_allowed": "no",
+  "fee": "Yes",
+  "square_feet": 500,
+  "address": "test address",
+  "cityname": "Evanston",
+  "state": "IL",
+  "zipcode": 60201
+}
+lambda_handler(event,None)
