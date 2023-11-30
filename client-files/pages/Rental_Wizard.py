@@ -6,7 +6,6 @@
 # Final Project for CS 310
 #
 # Authors:
-#   YOUR NAME
 #   Sharika Mahadevan, Hye Won Hwang, Alejandra Lelo de Larrea Ibarra
 #   Northwestern University
 #   CS 310
@@ -172,11 +171,16 @@ st.set_page_config(
 st.title('** Let\'s get started! **')
 st.sidebar.success("Let's get started.")
 st.header('Please input these details.')
-bathrooms = st.number_input("Please enter the number of bedrooms.")
-bedrooms = st.number_input("Please enter the number of bathrooms.")
+bathrooms = st.number_input("Please enter the number of bedrooms.", 0, 10)
+bedrooms = st.number_input("Please enter the number of bathrooms.", 0, 10)
 amenities = st.multiselect(
     'What amenities does your apartment have?',
-    ['Internet Access', 'Playground', 'Basketball', 'Refrigerator', 'Golf', 'AC', 'Dishwasher', 'Wood Floors', 'TV', 'Storage', 'Tennis', 'Patio/Deck', 'Gated', 'View', 'Alarm', 'Clubhouse', 'Doorman', 'Hot Tub', 'Fireplace', 'Washer Dryer', 'Cable or Satellite', 'Pool', 'Luxury', 'Garbage Disposal', 'Parking', 'Elevator', 'Gym'])
+    options = ['Internet Access', 'Playground', 'Basketball', 'Refrigerator', 'Golf', 
+     'AC', 'Dishwasher', 'Wood Floors', 'TV', 'Storage', 'Tennis', 'Patio/Deck', 
+     'Gated', 'View', 'Alarm', 'Clubhouse', 'Doorman', 'Hot Tub', 'Fireplace', 
+     'Washer Dryer', 'Cable or Satellite', 'Pool', 'Luxury', 'Garbage Disposal', 
+     'Parking', 'Elevator', 'Gym'],
+     placeholder = "Select all that apply. Multiple selection if holding ctrl. ")
 has_photos = st.selectbox("Do you have photos?", ("Yes", "No"))
 dogs_allowed = st.selectbox("Are dogs allowed?", ("Yes", "No"))
 cats_allowed = st.selectbox("Are cats allowed?", ("Yes", "No"))
@@ -190,7 +194,7 @@ state_list = ('AK', 'AL', 'AR', 'AZ', 'CA', 'CO', 'CT', 'DC', 'DE', 'FL', 'GA',
 state = st.selectbox("Please select the state.", state_list)
 cityname = st.text_input("Please enter the name of the city.")
 zipcode = st.text_input("Please enter the zipcode.")
-fee = st.number_input("Please enter the fee.")
+fee = st.number_input("Please enter the amount of any additional fees to pay.")
 
 # Create data packet for APIs
 input_data = {
@@ -223,26 +227,39 @@ configur.read(config_file)
 #
 baseurl = configur.get('client', 'webservice')
 
-if st.button("Generate a description for your apartment."):
-  generated_description = make_description(baseurl, input_data)
-  print(generated_description)
-  if generated_description['statusCode'] == 200:
-    st.write(generated_description['body'])
-  else:
-    print("There was an error.")
-    st.write(generated_description['body'])
-else:
-  st.write('Sorry, the specs you have shared are not valid. Try again.')
+# Initialize session state for description and price
+if 'generated_description' not in st.session_state:
+  st.session_state['generated_description'] = None
 
-if st.button("Get an estimate of fair price for your Apartment."):
-  predicted_price = make_prediction(baseurl, input_data)
-  print(predicted_price)
-  if predicted_price['statusCode'] == 200:
-    st.write("$ ", str(predicted_price['pred_price']))
-  else:
-    print("There was an error.")
-    st.write("There was an error while making the prediction.")
-    st.write(predicted_price["body"])
-else:
-  st.write('Sorry, the specs you have shared are not valid. Try again.')
+if 'predicted_price' not in st.session_state:
+  st.session_state['predicted_price'] = None
+
+# Create two columns for Description and Price buttons
+col1, col2 = st.columns(2)
+
+with col1:
+  with st.form(key = "DescriptionForm"):
+    submit_description = st.form_submit_button("Generate a description for your apartment.")
+    if submit_description:
+      st.session_state['generated_description'] = make_description(baseurl, input_data)
+    if st.session_state['generated_description']:
+      if st.session_state['generated_description'].get('statusCode') == 200:
+        st.write(st.session_state['generated_description']['body'])
+      else:
+        st.write("There was an error.")
+        st.write(st.session_state['generated_description'].get('body', ''))
+
+with col2:
+  with st.form(key='PriceForm'):
+    submit_price = st.form_submit_button("Get an estimate of fair price for your apartment.")
+    if submit_price:
+      st.session_state['predicted_price'] = make_prediction(baseurl, input_data)
+    if st.session_state['predicted_price']:
+      if st.session_state['predicted_price'].get('statusCode') == 200:
+        formatted_price = "${:,.2f}".format(st.session_state['predicted_price']['pred_price'])
+        st.write(formatted_price)
+      else:
+        st.write("There was an error.")
+        st.write(st.session_state['predicted_price'].get('body', ''))
+
 
